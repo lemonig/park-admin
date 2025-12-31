@@ -1,3 +1,10 @@
+/*
+ * @Author: Jonny
+ * @Date: 2025-12-18 19:41:34
+ * @LastEditors: Jonny
+ * @LastEditTime: 2025-12-30 16:04:34
+ * @FilePath: \park-web\app\(protected)\market\page.tsx
+ */
 // app/protected/market/page.tsx
 // （完全匹配您的文件结构：app/protected/market/page.tsx，作为 /protected/market 路由）
 
@@ -9,6 +16,8 @@ import { Button, message, Popconfirm, Tag } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import type { MarketItem } from "@/types/market";
 import MarketForm from "./components/MarketForm"; // 假设组件在根目录 components/ 下，根据实际调整
+import { TEST } from "@/types/test";
+
 import {
   getMarketList,
   addMarket,
@@ -164,7 +173,7 @@ const columns: ProColumns<MarketItem>[] = [
 ];
 
 const MarketPage: React.FC = () => {
-  const actionRef = React.useRef<ActionType>();
+  const actionRef = React.useRef<ActionType>(null);
 
   return (
     <ProTable<MarketItem>
@@ -175,7 +184,7 @@ const MarketPage: React.FC = () => {
       columns={columns}
       request={async (params, sorter, filter) => {
         try {
-          const res = await getMarketList({
+          const res: any = await getMarketList({
             pageNum: params.current,
             pageSize: params.pageSize,
             ...params,

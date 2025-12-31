@@ -36,7 +36,7 @@ const MarketForm: React.FC<MarketFormProps> = ({
         return success;
       }}
       modalProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         width: 600,
       }}
       submitter={{

@@ -2,9 +2,11 @@
  * @Author: Jonny
  * @Date: 2025-12-23 08:55:21
  * @LastEditors: Jonny
- * @LastEditTime: 2025-12-23 09:37:17
- * @FilePath: \park-web\types\market.tsx
+ * @LastEditTime: 2025-12-30 15:24:10
+ * @FilePath: \park-web\types\market.ts
  */
+import abc from '@/this-file-does-not-exist'
+
 export interface MarketItem {
   id: number;
   code: string;
