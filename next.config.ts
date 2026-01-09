@@ -2,7 +2,7 @@
  * @Author: Jonny
  * @Date: 2025-12-18 09:45:56
  * @LastEditors: Jonny
- * @LastEditTime: 2025-12-29 19:29:18
+ * @LastEditTime: 2026-01-07 19:35:44
  * @FilePath: \park-web\next.config.ts
  */
 import type { NextConfig } from "next";
@@ -13,8 +13,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*', // 前端所有 /api/* 请求
-        destination: 'http://localhost:3429/api/:path*', // 代理到您的 Spring Boot 后端（改成您的端口/IP）
+        source: '/api/:path*',
+        destination: 'http://127.0.0.1:3429/api/:path*',
       },
     ];
   },

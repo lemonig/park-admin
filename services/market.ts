@@ -2,11 +2,12 @@
  * @Author: Jonny
  * @Date: 2025-12-29 18:56:51
  * @LastEditors: Jonny
- * @LastEditTime: 2025-12-31 13:38:25
+ * @LastEditTime: 2026-01-08 19:28:14
  * @FilePath: \park-web\services\market.ts
  */
 // services/market.ts
 import request from './request';
+// import { clientRequest as request, serverRequest } from '@/lib/request';
 import type { MarketItem } from '@/types/market';
 
 // 列表查询（分页、排序、过滤）
