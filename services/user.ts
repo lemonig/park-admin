@@ -3,8 +3,8 @@ import request from './request';
 
 // 登录
 export const login = (params: any) => {
-  return request.post('/api/login', params);
+  return request.post('/login', params);
 };
 export const userList = (params: any) => {
-  return request.post('/api/user/all', params);
+  return request.post('/user/all', params);
 };
