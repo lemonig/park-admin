@@ -12,7 +12,7 @@ import type { MarketItem } from '@/types/market';
 
 // 列表查询（分页、排序、过滤）
 export const getMarketList = (params: any) => {
-  return request.post('/market/list', params);
+  return request.get('/market/list', params);
 };
 
 // 新增
@@ -27,10 +27,10 @@ export const updateMarket = (id: number, data: MarketItem) => {
 
 // 删除
 export const deleteMarket = (id: number) => {
-  return request.post(`/market/${id}`);
+  return request.delete(`/market/${id}`);
 };
 
 // 详情（可选，如果需要单独详情页）
 export const getMarketDetail = (id: number) => {
-  return request.post(`/market/${id}`);
+  return request.get(`/market/${id}`);
 };

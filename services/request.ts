@@ -2,16 +2,17 @@
  * @Author: Jonny
  * @Date: 2025-12-29 18:57:23
  * @LastEditors: Jonny
- * @LastEditTime: 2025-12-31 11:19:50
+ * @LastEditTime: 2026-01-15 19:35:27
  * @FilePath: \park-web\services\request.ts
  */
 // services/request.ts
 import axios from 'axios';
 import { message } from 'antd';
 import { useRouter } from 'next/navigation'; // 如果需要跳转登录
+const router = useRouter();
 
 const request = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE || '/api', // .env.local 配置 NEXT_PUBLIC_API_BASE=http://localhost:8080
+  baseURL: '/api',
   timeout: 15000,
 });
 
@@ -19,7 +20,9 @@ const request = axios.create({
 request.interceptors.request.use((config) => {
   const token = localStorage.getItem('token'); // 假设后台登录存这个 key
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.token = `${token}`;
+  } else {
+    router.push("/market");
   }
   return config;
 });
