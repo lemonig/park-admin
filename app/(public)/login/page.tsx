@@ -11,6 +11,7 @@ import { Button, Form, Input, Card, Typography, message } from "antd";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { login } from "@/services/user";
+import { log } from "console";
 
 const { Title } = Typography;
 
@@ -21,7 +22,7 @@ interface LoginResponse {
     token: string;
     userInfo: {
       id: number;
-      username: string;
+      account: string;
       name?: string;
       roles?: string[];
       // 根据实际后端返回字段补充
@@ -34,10 +35,11 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
 
-  const onFinish = async (values: { username: string; password: string }) => {
+  const onFinish = async (values: { account: string; password: string }) => {
     setLoading(true);
     try {
       const result: any = await login(values);
+console.log(result);
 
       if (result.code === 0 && result.data) {
         // 登录成功
@@ -78,7 +80,7 @@ export default function Login() {
           >
             <Form.Item
               label="用户名"
-              name="username"
+              name="account"
               rules={[{ required: true, message: "请输入用户名" }]}
             >
               <Input placeholder="请输入用户名" />
