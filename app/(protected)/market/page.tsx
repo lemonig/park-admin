@@ -2,18 +2,17 @@
  * @Author: Jonny
  * @Date: 2025-12-18 19:41:34
  * @LastEditors: Jonny
- * @LastEditTime: 2025-12-30 16:04:34
- * @FilePath: \park-web\app\(protected)\market\page.tsx
+ * @LastEditTime: 2026-01-23 16:47:45
+ * @FilePath: \park-admin\app\(protected)\market\page.tsx
  */
-// app/protected/market/page.tsx
-// （完全匹配您的文件结构：app/protected/market/page.tsx，作为 /protected/market 路由）
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Table, Button, message, Popconfirm, Tag, Pagination } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import { Table, Button, message, Popconfirm, Tag, Pagination, Form, Input, Select, Space } from "antd";
+import { PlusOutlined, SearchOutlined, ReloadOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import type { MarketItem } from "@/types/market";
+import type { Market, Request } from "@/types/market";
+import type { ApiResponse } from "@/types/public";
 import MarketForm from "./components/MarketForm";
 import {
   getMarketList,
@@ -22,41 +21,58 @@ import {
   deleteMarket,
 } from "@/services/market";
 
-// 注意：这里假设你的后端接口参数是 pageNum / pageSize（常见写法）
-// 如果是 current / pageSize，记得对应调整
+const { Option } = Select;
 
 const MarketPage: React.FC = () => {
-  const [dataSource, setDataSource] = useState<MarketItem[]>([]);
+  const [dataSource, setDataSource] = useState<Market[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
 
-  // 分页 & 排序参数
+  // 分页参数
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 10, // 你可以改成 15/20 都行
+    pageSize: 10,
   });
 
-  const [sorter, setSorter] = useState<any>(null); // 用于记录当前排序字段
+  // 排序参数
+  const [sorter, setSorter] = useState<any>(null);
 
-  const fetchData = async () => {
+  // 搜索表单
+  const [searchForm] = Form.useForm();
+
+  // 编辑相关状态
+  const [editingRecord, setEditingRecord] = useState<Market | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+
+  const fetchData = async (searchParams?: Partial<Request>) => {
     setLoading(true);
     try {
-      const params = {
+      const params: Request = {
         pageNum: pagination.current,
         pageSize: pagination.pageSize,
-        // 如果有搜索条件，以后可以在这里加 ...searchParams
-        // 排序（只支持单字段排序，antd 默认行为）
-        ...(sorter?.field && sorter.order
-          ? { sortField: sorter.field, sortOrder: sorter.order === "ascend" ? "asc" : "desc" }
-          : {}),
+        ...searchParams,
       };
 
-      const res:any = await getMarketList(params);
+      // 添加排序参数（如果有的话）
+      if (sorter?.field && sorter?.order) {
+        // 这里假设后端接受 sortField 和 sortOrder 参数
+        // 你可以根据实际后端API调整
+        Object.assign(params, {
+          sortField: sorter.field,
+          sortOrder: sorter.order === "ascend" ? "asc" : "desc",
+        });
+      }
 
-      // 假设接口返回格式是 { list: [], total: number }
-      // 如果是 { data: { list, pagination: { total } } } 记得调整
-      setDataSource(res.list || res.data?.list || []);
-      setTotal(res.total || res.data?.total || 0);
+      const response: ApiResponse<Market[]> = await getMarketList(params);
+
+      if (response.code === 0 || response.success) {
+        setDataSource(response.data || []);
+        setTotal(response.page?.total || 0);
+      } else {
+        message.error(response.message || "加载数据失败");
+        setDataSource([]);
+        setTotal(0);
+      }
     } catch (error) {
       message.error("加载数据失败");
       setDataSource([]);
@@ -66,13 +82,36 @@ const MarketPage: React.FC = () => {
     }
   };
 
-  // 初始加载 + 分页/排序变化时触发
+  // 搜索函数
+  const handleSearch = async (values: any) => {
+    setPagination(prev => ({ ...prev, current: 1 })); // 重置到第一页
+    await fetchData(values);
+  };
+
+  // 重置搜索
+  const handleReset = async () => {
+    searchForm.resetFields();
+    setPagination(prev => ({ ...prev, current: 1 }));
+    await fetchData();
+  };
+
+  // 处理表格变化（分页、排序）
+  const handleTableChange = (pag: any, filters: any, sort: any) => {
+    const currentSorter = Array.isArray(sort) ? sort[0] : sort;
+    setSorter(currentSorter);
+    setPagination({
+      current: pag.current ?? 1,
+      pageSize: pag.pageSize ?? 10,
+    });
+  };
+
+  // 初始加载
   useEffect(() => {
     fetchData();
   }, [pagination.current, pagination.pageSize, sorter]);
 
   // 表格列定义
-  const columns: ColumnsType<MarketItem> = [
+  const columns: ColumnsType<Market> = [
     {
       title: "序号",
       key: "index",
@@ -80,18 +119,11 @@ const MarketPage: React.FC = () => {
       fixed: "left",
       render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
     },
-    {
-      title: "业务编码",
-      dataIndex: "code",
-      key: "code",
-      width: 160,
-      // copyable: true, // antd 原生 Table 不支持 copyable，需要自己实现或用插件
-      ellipsis: true,
-    },
+
     {
       title: "车位编号",
-      dataIndex: "parking_no",
-      key: "parking_no",
+      dataIndex: "parkingNo",
+      key: "parkingNo",
       width: 120,
     },
     {
@@ -99,9 +131,9 @@ const MarketPage: React.FC = () => {
       dataIndex: "type",
       key: "type",
       width: 100,
-      render: (_, record) => (
-        <Tag color={record.type === 1 ? "green" : "blue"}>
-          {record.type === 1 ? "出售" : "租赁"}
+      render: (type: number) => (
+        <Tag color={type === 1 ? "green" : "blue"}>
+          {type === 1 ? "出售" : "租赁"}
         </Tag>
       ),
     },
@@ -110,8 +142,7 @@ const MarketPage: React.FC = () => {
       dataIndex: "price",
       key: "price",
       width: 140,
-      sorter: true,          // 开启前端排序标记，但实际走服务端
-      render: (text) => `¥${Number(text).toFixed(2)}`,
+      render: (price: number) => `¥${Number(price || 0).toFixed(2)}`,
     },
     {
       title: "联系电话",
@@ -121,8 +152,8 @@ const MarketPage: React.FC = () => {
     },
     {
       title: "位置描述",
-      dataIndex: "position_desc",
-      key: "position_desc",
+      dataIndex: "positionDesc",
+      key: "positionDesc",
       width: 200,
       ellipsis: true,
     },
@@ -138,33 +169,29 @@ const MarketPage: React.FC = () => {
       dataIndex: "status",
       key: "status",
       width: 120,
-      render: (_, record) => (
+      render: (status: number) => (
         <Tag
           color={
-            record.status === 1 ? "green" : record.status === 2 ? "red" : "orange"
+            status === 1 ? "green" : status === 2 ? "red" : "orange"
           }
         >
-          {record.status === 0
-            ? "待审核"
-            : record.status === 1
-            ? "已通过"
-            : "已拒绝"}
+          {status === 0 ? "待审核" : status === 1 ? "已通过" : "已拒绝"}
         </Tag>
       ),
     },
     {
       title: "创建时间",
-      dataIndex: "created_at",
-      key: "created_at",
+      dataIndex: "gmtCreate",
+      key: "gmtCreate",
       width: 180,
-      sorter: true,
+      render: (date: Date) => date ? new Date(date).toLocaleString() : "-",
     },
     {
       title: "审核时间",
-      dataIndex: "audit_time",
-      key: "audit_time",
+      dataIndex: "auditTime",
+      key: "auditTime",
       width: 180,
-      sorter: true,
+      render: (date: Date) => date ? new Date(date).toLocaleString() : "-",
     },
     {
       title: "操作",
@@ -172,15 +199,13 @@ const MarketPage: React.FC = () => {
       width: 200,
       fixed: "right",
       render: (_, record) => (
-        <>
+        <Space>
           <Button
             type="link"
             size="small"
             onClick={() => {
-              // 这里原来是 action.startEditable
-              // 现在如果你想保留行内编辑，可以自己做 Modal 编辑，或者跳页面
-              message.info(`准备编辑车位：${record.parking_no} (id: ${record.id})`);
-              // 推荐做法：打开同一个 MarketForm 的编辑模式
+              setEditingRecord(record);
+              setEditModalVisible(true);
             }}
           >
             编辑
@@ -188,10 +213,11 @@ const MarketPage: React.FC = () => {
           <Popconfirm
             title="确定删除该车位信息吗？"
             onConfirm={async () => {
+              if (!record.id) return;
               try {
                 await deleteMarket(record.id);
                 message.success("删除成功");
-                fetchData(); // 刷新当前页
+                fetchData();
               } catch {
                 message.error("删除失败");
               }
@@ -201,53 +227,79 @@ const MarketPage: React.FC = () => {
               删除
             </Button>
           </Popconfirm>
-        </>
+        </Space>
       ),
     },
   ];
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
-        <MarketForm
-          title="新增车位信息"
-          trigger={
-            <Button type="primary" icon={<PlusOutlined />}>
-              新增
+      {/* 搜索表单 */}
+      <Form
+        form={searchForm}
+        layout="inline"
+        style={{ marginBottom: 16 }}
+        onFinish={handleSearch}
+      >
+        <Form.Item name="parkingNo" label="车位编号">
+          <Input placeholder="输入车位编号" allowClear />
+        </Form.Item>
+        <Form.Item name="type" label="租售类型">
+          <Select placeholder="请选择" allowClear style={{ width: 120 }}>
+            <Option value={1}>出售</Option>
+            <Option value={2}>租赁</Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name="status" label="审核状态">
+          <Select placeholder="请选择" allowClear style={{ width: 120 }}>
+            <Option value={0}>待审核</Option>
+            <Option value={1}>已通过</Option>
+            <Option value={2}>已拒绝</Option>
+          </Select>
+        </Form.Item>
+        <Form.Item>
+          <Space>
+            <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
+              搜索
             </Button>
-          }
-          onFinish={async (values) => {
-            try {
-              await addMarket(values);
-              message.success("新增成功");
-              fetchData(); // 刷新列表（一般回到第一页比较好）
-              return true;
-            } catch {
-              message.error("新增失败");
-              return false;
-            }
-          }}
-        />
-      </div>
+            <Button onClick={handleReset} icon={<ReloadOutlined />}>
+              重置
+            </Button>
+            <MarketForm
+              title="新增车位信息"
+              trigger={
+                <Button type="primary" icon={<PlusOutlined />}>
+                  新增
+                </Button>
+              }
+              onFinish={async (values) => {
+                try {
+                  await addMarket(values);
+                  message.success("新增成功");
+                  fetchData(); // 刷新列表
+                  return true;
+                } catch {
+                  message.error("新增失败");
+                  return false;
+                }
+              }}
+            />
+          </Space>
+        </Form.Item>
+      </Form>
 
-      <Table<MarketItem>
+      {/* 表格 */}
+      <Table<Market>
         columns={columns}
         dataSource={dataSource}
         rowKey="id"
         loading={loading}
         scroll={{ x: 1600 }}
-        pagination={false} // 关掉内置分页，自己用下面 Pagination 组件
-        onChange={(pag, filters, sort) => {
-          // 注意：sort 可能是单个对象，也可能是数组（多列排序），这里只处理单列
-          const currentSorter = Array.isArray(sort) ? sort[0] : sort;
-          setSorter(currentSorter);
-          setPagination({
-            current: pag.current ?? 1,
-            pageSize: pag.pageSize ?? 10,
-          });
-        }}
+        pagination={false}
+        onChange={handleTableChange}
       />
 
+      {/* 分页 */}
       <div style={{ marginTop: 16, textAlign: "right" }}>
         <Pagination
           current={pagination.current}
@@ -260,10 +312,35 @@ const MarketPage: React.FC = () => {
             setPagination({ current: page, pageSize });
           }}
           onShowSizeChange={(current, size) => {
-            setPagination({ current: 1, pageSize: size }); // 改 pageSize 时回到第一页
+            setPagination({ current: 1, pageSize: size });
           }}
         />
       </div>
+
+      {/* 编辑表单 */}
+      {editingRecord && (
+        <MarketForm
+          title="编辑车位信息"
+          open={editModalVisible}
+          initialValues={editingRecord}
+          onOpenChange={setEditModalVisible}
+          onFinish={async (values) => {
+            if (!editingRecord.id) return false;
+            try {
+              await updateMarket(editingRecord.id, values);
+              message.success("编辑成功");
+              setEditModalVisible(false);
+              setEditingRecord(null);
+              fetchData(); // 刷新列表
+              return true;
+            } catch {
+              message.error("编辑失败");
+              return false;
+            }
+          }}
+          trigger={<></>} // 不使用trigger，因为我们手动控制显示
+        />
+      )}
     </div>
   );
 };

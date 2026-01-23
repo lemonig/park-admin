@@ -2,8 +2,8 @@
  * @Author: Jonny
  * @Date: 2025-12-18 09:45:56
  * @LastEditors: Jonny
- * @LastEditTime: 2025-12-22 15:29:19
- * @FilePath: \park-web\app\layout.tsx
+ * @LastEditTime: 2026-01-22 19:07:01
+ * @FilePath: \park-admin\app\layout.tsx
  */
 import type { Metadata } from "next";
 
@@ -13,6 +13,7 @@ import "antd/dist/reset.css";
 
 // UI / 基础设施级 Provider
 import { AntdRegistry } from "@ant-design/nextjs-registry";
+import Providers from './providers'
 
 export const metadata: Metadata = {
   title: {
@@ -34,7 +35,11 @@ export default function RootLayout({
           AntdRegistry 只做样式收集
           不涉及用户态 / 业务态
         */}
-        <AntdRegistry>{children}</AntdRegistry>
+        <AntdRegistry>
+          <Providers>
+            {children}
+          </Providers>
+        </AntdRegistry>
       </body>
     </html>
   );

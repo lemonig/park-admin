@@ -2,16 +2,25 @@
  * @Author: Jonny
  * @Date: 2025-12-18 15:02:25
  * @LastEditors: Jonny
- * @LastEditTime: 2026-01-15 19:37:40
- * @FilePath: \park-web\app\(public)\login\page.tsx
+ * @LastEditTime: 2026-01-22 19:28:05
+ * @FilePath: \park-admin\app\(public)\login\page.tsx
  */
+'use client';
+
+/*
+ * @Author: Jonny
+ * @Date: 2026-01-16 11:07:55
+ * @LastEditors: Jonny
+ * @LastEditTime: 2026-01-21 17:28:36
+ * @FilePath: \feiye\app\(public)\login\page.tsx
+ */
+
 "use client";
 
 import { Button, Form, Input, Card, Typography, message } from "antd";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { login } from "@/services/user";
-import { log } from "console";
 
 const { Title } = Typography;
 
@@ -22,7 +31,7 @@ interface LoginResponse {
     token: string;
     userInfo: {
       id: number;
-      account: string;
+      username: string;
       name?: string;
       roles?: string[];
       // 根据实际后端返回字段补充
@@ -35,25 +44,22 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
 
-  const onFinish = async (values: { account: string; password: string }) => {
+  const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
     try {
-      const result: any = await login(values);
-console.log(result);
+      const { data: result } = await login(values);
+      console.log(result);
 
-      if (result.code === 0 && result.data) {
-        // 登录成功
-        localStorage.setItem("token", result.data.token);
-        localStorage.setItem("userInfo", JSON.stringify(result.data.userInfo));
 
-        messageApi.success("登录成功");
+      // 登录成功
+      localStorage.setItem("token", result.token);
 
-        // 跳转到首页（根据你的路由结构修改路径）
-        router.push("/market");
-      } else {
-        // 后端返回业务错误
-        messageApi.error(result.message || "登录失败，请检查用户名或密码");
-      }
+      messageApi.success("登录成功");
+
+
+      router.push("/market");
+      // 跳转到首页（根据你的路由结构修改路径）
+
     } catch (error) {
       // 网络错误或其他异常
       messageApi.error("网络异常，请稍后重试");
@@ -67,39 +73,59 @@ console.log(result);
     <>
       {contextHolder}
       <div style={styles.container}>
-        <Card style={styles.card}>
-          <Title level={3} style={{ textAlign: "center", marginBottom: 24 }}>
-            后台管理系统
-          </Title>
+        <div style={styles.overlay}></div>
+        <Card style={styles.card} bodyStyle={{ padding: 0 }}>
+          <div style={{ padding: "40px 32px" }}>
+            <div style={styles.title}>
+              废液管理系统
+            </div>
 
-          <Form
-            name="login"
-            layout="vertical"
-            onFinish={onFinish}
-            autoComplete="off"
-          >
-            <Form.Item
-              label="用户名"
-              name="account"
-              rules={[{ required: true, message: "请输入用户名" }]}
+            <Form
+              name="login"
+              layout="vertical"
+              onFinish={onFinish}
+              autoComplete="off"
+              style={styles.form}
             >
-              <Input placeholder="请输入用户名" />
-            </Form.Item>
+              <Form.Item
+                label={<span style={{ fontSize: "16px", fontWeight: 500, color: "#374151" }}>用户名</span>}
+                name="account"
+                rules={[{ required: true, message: "请输入用户名" }]}
+                style={styles.formItem}
+              >
+                <Input
+                  placeholder="请输入用户名"
+                  style={styles.input}
+                  prefix={<span style={{ color: "#9ca3af", marginRight: 8 }}>👤</span>}
+                />
+              </Form.Item>
 
-            <Form.Item
-              label="密码"
-              name="password"
-              rules={[{ required: true, message: "请输入密码" }]}
-            >
-              <Input.Password placeholder="请输入密码" />
-            </Form.Item>
+              <Form.Item
+                label={<span style={{ fontSize: "16px", fontWeight: 500, color: "#374151" }}>密码</span>}
+                name="password"
+                rules={[{ required: true, message: "请输入密码" }]}
+                style={styles.formItem}
+              >
+                <Input.Password
+                  placeholder="请输入密码"
+                  style={styles.input}
+                  prefix={<span style={{ color: "#9ca3af", marginRight: 8 }}>🔒</span>}
+                />
+              </Form.Item>
 
-            <Form.Item>
-              <Button type="primary" htmlType="submit" block loading={loading}>
-                登录
-              </Button>
-            </Form.Item>
-          </Form>
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  loading={loading}
+                  style={styles.button}
+                >
+                  {loading ? "登录中..." : "登录"}
+                </Button>
+              </Form.Item>
+            </Form>
+          </div>
         </Card>
       </div>
     </>
@@ -108,13 +134,69 @@ console.log(result);
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    height: "100vh",
+    minHeight: "100vh",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    background: "#f0f2f5",
+    // backgroundImage: "url('/images/bg.jpg')",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundAttachment: "fixed",
+    position: "relative",
+    padding: "20px",
+  },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    backdropFilter: "blur(2px)",
   },
   card: {
-    width: 360,
+    width: "100%",
+    maxWidth: 420,
+    borderRadius: 16,
+    boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    backdropFilter: "blur(10px)",
+    background: "rgba(255, 255, 255, 0.95)",
+    position: "relative",
+    zIndex: 1,
+    padding: "8px",
+  },
+  title: {
+    textAlign: "center",
+    marginBottom: 32,
+    fontSize: "28px",
+    fontWeight: 600,
+    color: "#1f2937",
+    textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+  },
+  form: {
+    padding: "0 8px",
+  },
+  formItem: {
+    marginBottom: 24,
+  },
+  input: {
+    height: 48,
+    borderRadius: 8,
+    border: "1px solid #e5e7eb",
+    fontSize: 16,
+    transition: "all 0.3s ease",
+  },
+  button: {
+    height: 48,
+    borderRadius: 8,
+    fontSize: 16,
+    fontWeight: 500,
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    border: "none",
+    boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
+    transition: "all 0.3s ease",
+    marginTop: 8,
   },
 };

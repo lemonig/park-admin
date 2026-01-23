@@ -2,11 +2,18 @@
  * @Author: Jonny
  * @Date: 2025-12-29 18:57:23
  * @LastEditors: Jonny
- * @LastEditTime: 2026-01-15 19:35:27
- * @FilePath: \park-web\services\request.ts
+ * @LastEditTime: 2026-01-23 16:25:45
+ * @FilePath: \park-admin\services\request.ts
  */
 // services/request.ts
-import axios from 'axios';
+
+'use client';
+// services/request.ts
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  InternalAxiosRequestConfig,
+} from 'axios';
 import { message } from 'antd';
 
 const request = axios.create({
@@ -14,54 +21,118 @@ const request = axios.create({
   timeout: 15000,
 });
 
-// 请求拦截：统一加 token
-request.interceptors.request.use((config) => {
+export interface ApiResponse<T> {
+  code: number;
+  msg: string;
+  success: boolean;
+  data: T;
+}
 
-  if (localStorage.getItem("token") || !!localStorage.getItem("token")) {
-    config.headers["token"] = localStorage.getItem("token");
+interface GetOptions<P> {
+  url: string;
+  params?: P;
+}
+
+interface PostOptions<D> {
+  url: string;
+  data?: D;
+}
+
+
+// 请求拦截：统一加 token
+request.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  console.log(config);
+
+  // 只有在客户端环境中才访问 localStorage
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token'); // 假设后台登录存这个 key
+    if (token) {
+      config.headers.token = `${token}`;
+    } else {
+
+    }
   }
   return config;
-} ,(err) => {
-    return Promise.reject(err);
-  }),
+});
 
 // 响应拦截：统一处理错误
 request.interceptors.response.use(
   (response) => {
     console.log(response);
 
-    // 假设后端成功返回 { code: 0, data: ..., msg: '' }
-     if (response.data && response.data.code === 0) {
-
-      if (response.data instanceof Blob) {
-        return Promise.resolve(response);
-      }
-
-      if (response.data.code === 401) {
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = window.location.origin + "/login";
-      } else if (response.data.code === 403) {
-      }
-      // else if (response.data.code !== 0) {
-      //   return Promise.reject(response);
-      // }
-      return Promise.resolve(response.data);
+    if (response.data.code === 0) {
+      return response.data; // 直接返回 data
     }
     message.error(response.data.msg || '操作失败');
-    return Promise.reject(response.data);
+    return Promise.reject(response);
   },
   (error) => {
-      console.log(error);
-    if (error.response?.status === 401) {
+    if (error.response?.status == 401) {
       message.error('登录过期，请重新登录');
+      // 只有在客户端环境中才访问 localStorage
+      if (typeof window !== 'undefined') {
         // window.location.href = window.location.origin + "/login";
-      // localStorage.removeItem('token');
-    } else {
+
+        localStorage.removeItem('token');
+      }
+    }
+
+    else if (error.response?.status == 400) {
+      message.error(error.response.message);
+    }
+    else {
       message.error(error.response?.data?.msg || '网络错误');
     }
     return Promise.reject(error);
   },
 );
+
+/**
+ * GET 请求
+ */
+export const _get = <T, P>(
+  options: GetOptions<P>,
+): Promise<T> => {
+  const { url, params } = options;
+  return request.get(url, { params });
+};
+
+/**
+ * POST 请求
+ */
+export const _post = <T, D>(
+  options: PostOptions<D>,
+): Promise<T> => {
+  const { url, data } = options;
+
+  return request.post(url, data);
+};
+
+export const _put = <T, D>(
+  options: PostOptions<D>,
+): Promise<T> => {
+  const { url, data } = options;
+
+  return request.put(url, data);
+}
+
+export const _delete = <T, D>(
+  options: PostOptions<D>,
+): Promise<T> => {
+  return request.delete(options.url);
+};
+
+/**
+ * 下载文件请求
+ */
+
+export const _download = <T, D>(
+  options: PostOptions<D>,
+): Promise<T> => {
+  const { url, data } = options;
+
+  return request.post(url, data);
+};
+
 
 export default request;

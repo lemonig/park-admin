@@ -11,13 +11,15 @@ import {
   ProFormSelect,
 } from "@ant-design/pro-components";
 import { message } from "antd";
-import type { MarketItem } from "@/types/market";
+import type { Market } from "@/types/market";
 
 interface MarketFormProps {
   title: string;
   trigger: React.ReactNode;
-  onFinish: (values: MarketItem) => Promise<boolean>;
-  initialValues?: MarketItem; // 编辑时传入初始值（ProTable 会自动传）
+  onFinish: (values: Market) => Promise<boolean>;
+  initialValues?: Market; // 编辑时传入初始值
+  open?: boolean; // 外部控制显示
+  onOpenChange?: (open: boolean) => void; // 外部控制显示变化
 }
 
 const MarketForm: React.FC<MarketFormProps> = ({
@@ -25,14 +27,18 @@ const MarketForm: React.FC<MarketFormProps> = ({
   trigger,
   onFinish,
   initialValues,
+  open,
+  onOpenChange,
 }) => {
   return (
-    <ModalForm<MarketItem>
+    <ModalForm<Market>
       title={title}
       trigger={trigger}
+      open={open}
+      onOpenChange={onOpenChange}
       initialValues={initialValues}
       onFinish={async (values) => {
-        const success = await onFinish(values as MarketItem);
+        const success = await onFinish(values as Market);
         return success;
       }}
       modalProps={{
@@ -45,14 +51,8 @@ const MarketForm: React.FC<MarketFormProps> = ({
         },
       }}
     >
-      {/* 业务编码（新增时可手动填或后端自动生成，编辑时只读） */}
-      <ProFormText
-        name="code"
-        label="业务编码"
-        placeholder="如 PARK-20251223-001（可留空由系统生成）"
-        rules={[{ required: false }]}
-        readonly={!!initialValues?.code} // 编辑时不可改
-      />
+
+
 
       {/* 类型 */}
       <ProFormSelect

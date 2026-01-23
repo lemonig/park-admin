@@ -1,5 +1,8 @@
 /* styles/globals.css */
 
+@import "tailwindcss";
+/* styles/globals.css */
+
 html,
 body {
   margin: 0;

@@ -17,12 +17,18 @@ importers:
       '@ant-design/pro-components':
         specifier: ^2.8.10
         version: 2.8.10(antd@6.1.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(rc-field-form@2.7.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@tailwindcss/postcss':
+        specifier: ^4.1.18
+        version: 4.1.18
       antd:
         specifier: ^6.1.1
         version: 6.1.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       axios:
         specifier: ^1.13.2
         version: 1.13.2
+      dayjs:
+        specifier: ^1.11.19
+        version: 1.11.19
       next:
         specifier: 16.0.10
         version: 16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -32,10 +38,10 @@ importers:
       react-dom:
         specifier: 19.2.1
         version: 19.2.1(react@19.2.1)
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4
+      tailwindcss:
+        specifier: ^4.1.18
         version: 4.1.18
+    devDependencies:
       '@types/node':
         specifier: ^20
         version: 20.19.27
@@ -51,9 +57,6 @@ importers:
       eslint-config-next:
         specifier: 16.0.10
         version: 16.0.10(@typescript-eslint/parser@8.50.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
-      tailwindcss:
-        specifier: ^4
-        version: 4.1.18
       typescript:
         specifier: ^5
         version: 5.9.3

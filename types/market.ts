@@ -2,28 +2,60 @@
  * @Author: Jonny
  * @Date: 2025-12-23 08:55:21
  * @LastEditors: Jonny
- * @LastEditTime: 2025-12-30 15:24:10
- * @FilePath: \park-web\types\market.ts
+ * @LastEditTime: 2026-01-23 16:10:22
+ * @FilePath: \park-admin\types\market.ts
  */
-import abc from '@/this-file-does-not-exist'
 
-export interface MarketItem {
-  id: number;
-  code: string;
-  user_id: number;
-  price: number;
-  parking_no: string;
-  description?: string;
-  type: 1 | 2; // 1出售 2租赁
-  phone: string;
-  position_desc?: string;
-  specs?: string;
-  status: 0 | 1 | 2;
-  audit_time?: string;
-  created_at: string;
-  updated_at?: string;
-  // 预留字段
-  city?: string;
-  area?: string;
-  community?: string;
+
+import { ApiResponse } from "./public";
+export interface SimpleImage {
+  id?: string;
+  url?: string;
 }
+
+export interface Market {
+  area?: string;
+  auditTime?: Date;
+  city?: string;
+  code?: string;
+  community?: string;
+  description?: string;
+  gmtCreate?: Date;
+  gmtModify?: Date;
+  id?: number;
+  images?: SimpleImage[];
+  parkingNo?: string;
+  phone?: string;
+  positionDesc?: string;
+  price?: number;
+  specs?: string;
+  status?: number;
+  type?: number;
+  userId?: number;
+}
+
+
+export interface Request {
+  /**
+   * 页码（最小1）
+   */
+  pageNum?: number;
+  /**
+   * 每页大小（最小1，推荐10-50）
+   */
+  pageSize?: number;
+  /**
+   * 车位编号模糊查询（如 'A-101'，可选）
+   */
+  parkingNo?: string;
+  /**
+   * 审核状态：0=待审核，1=通过，2=拒绝（可选）
+   */
+  status?: number;
+  /**
+   * 租售类型：1=出售，2=租赁（可选）
+   */
+  type?: number;
+}
+
+export type MarketRps = ApiResponse<Market[]>;
