@@ -47,7 +47,7 @@ request.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token'); // 假设后台登录存这个 key
     if (token) {
-      config.headers.token = `${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     } else {
 
     }
@@ -67,6 +67,7 @@ request.interceptors.response.use(
     return Promise.reject(response);
   },
   (error) => {
+    console.log(error)
     if (error.response?.status == 401) {
       message.error('登录过期，请重新登录');
       // 只有在客户端环境中才访问 localStorage

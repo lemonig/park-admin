@@ -6,7 +6,7 @@
  * @FilePath: \park-admin\services\market.ts
  */
 // services/market.ts
-import { _post, _get, _delete } from './request';
+import { _post, _get, _delete,_put } from './request';
 // import { clientRequest as request, serverRequest } from '@/lib/request';
 import type { Market, MarketRps, Request } from '@/types/market';
 
@@ -21,8 +21,8 @@ export const addMarket = (data: Market) => {
 };
 
 // 更新
-export const updateMarket = (id: number, data: Market) => {
-  return _post({ url: `/market/${id}`, data });
+export const updateMarket = ( data: Market) => {
+  return _put({ url: `/market/update`, data });
 };
 
 // 删除
