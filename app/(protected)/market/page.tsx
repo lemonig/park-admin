@@ -148,7 +148,7 @@ const MarketPage: React.FC = () => {
     },
 
     {
-      title: "车位编号",
+      title: "车位号",
       dataIndex: "parkingNo",
       key: "parkingNo",
       width: 120,
@@ -177,13 +177,13 @@ const MarketPage: React.FC = () => {
       key: "phone",
       width: 130,
     },
-    {
-      title: "位置描述",
-      dataIndex: "positionDesc",
-      key: "positionDesc",
-      width: 200,
-      ellipsis: true,
-    },
+    // {
+    //   title: "位置描述",
+    //   dataIndex: "positionDesc",
+    //   key: "positionDesc",
+    //   width: 200,
+    //   ellipsis: true,
+    // },
     {
       title: "规格描述",
       dataIndex: "specs",

@@ -7,6 +7,7 @@
  */
 // services/market.ts
 import { _post, _get, _delete, _put } from './request';
+
 // import { clientRequest as request, serverRequest } from '@/lib/request';
 import type { Market, MarketRps, Request } from '@/types/market';
 
@@ -27,7 +28,7 @@ export const updateMarket = (data: Market) => {
 
 // 删除
 export const deleteMarket = (id: number) => {
-  return _delete({ url: `/market/${id}` });
+  return _delete({ url: `/market/delete/${id}` });
 };
 
 // 详情（可选，如果需要单独详情页）

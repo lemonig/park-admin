@@ -79,7 +79,7 @@ const MarketForm: React.FC<MarketFormProps> = ({
 
       {/* 车位编号 */}
       <ProFormText
-        name="parking_no"
+        name="parkingNo"
         label="车位编号"
         rules={[{ required: true, message: "请输入车位编号" }]}
         placeholder="如 A-101"
@@ -97,11 +97,11 @@ const MarketForm: React.FC<MarketFormProps> = ({
       />
 
       {/* 位置描述 */}
-      <ProFormText
+      {/* <ProFormText
         name="position_desc"
         label="位置描述"
         placeholder="如 地下二层A区靠近电梯"
-      />
+      /> */}
 
       {/* 规格描述 */}
       <ProFormText
