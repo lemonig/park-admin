@@ -19,6 +19,7 @@ import {
   addMarket,
   updateMarket,
   deleteMarket,
+  getMarketDetail,
 } from "@/services/market";
 
 const { Option } = Select;
@@ -43,6 +44,7 @@ const MarketPage: React.FC = () => {
   // 编辑相关状态
   const [editingRecord, setEditingRecord] = useState<Market | null>(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editInitialValues, setEditInitialValues] = useState<any>(null);
 
   const fetchData = async (searchParams?: Partial<Request>) => {
     setLoading(true);
@@ -79,6 +81,31 @@ const MarketPage: React.FC = () => {
       setTotal(0);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditClick = async (record: Market) => {
+    if (!record.id) return;
+    try {
+      const res: any = await getMarketDetail(record.id);
+      const detail = res?.data || res;
+
+      if (!detail) {
+        message.error("获取车位详情失败");
+        return;
+      }
+
+      const formValues = {
+        ...detail,
+        parking_no: detail.parkingNo ?? detail.parking_no,
+        position_desc: detail.positionDesc ?? detail.position_desc,
+      };
+
+      setEditingRecord(record);
+      setEditInitialValues(formValues);
+      setEditModalVisible(true);
+    } catch {
+      message.error("获取车位详情失败");
     }
   };
 
@@ -204,8 +231,7 @@ const MarketPage: React.FC = () => {
             type="link"
             size="small"
             onClick={() => {
-              setEditingRecord(record);
-              setEditModalVisible(true);
+              handleEditClick(record);
             }}
           >
             编辑
@@ -322,12 +348,22 @@ const MarketPage: React.FC = () => {
         <MarketForm
           title="编辑车位信息"
           open={editModalVisible}
-          initialValues={editingRecord}
-          onOpenChange={setEditModalVisible}
+          initialValues={editInitialValues || editingRecord}
+          onOpenChange={(open) => {
+            setEditModalVisible(open);
+            if (!open) {
+              setEditingRecord(null);
+              setEditInitialValues(null);
+            }
+          }}
           onFinish={async (values) => {
             if (!editingRecord.id) return false;
             try {
-              await updateMarket(editingRecord.id, values);
+              await updateMarket({
+                ...values,
+                id: editingRecord.id,
+
+              });
               message.success("编辑成功");
               setEditModalVisible(false);
               setEditingRecord(null);

@@ -47,7 +47,8 @@ request.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token'); // 假设后台登录存这个 key
     if (token) {
-      config.headers.token = `${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.token = `Bearer ${token}`;
     } else {
 
     }
@@ -73,7 +74,7 @@ request.interceptors.response.use(
       if (typeof window !== 'undefined') {
         // window.location.href = window.location.origin + "/login";
 
-        localStorage.removeItem('token');
+        // localStorage.removeItem('token');
       }
     }
 

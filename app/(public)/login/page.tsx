@@ -7,15 +7,7 @@
  */
 'use client';
 
-/*
- * @Author: Jonny
- * @Date: 2026-01-16 11:07:55
- * @LastEditors: Jonny
- * @LastEditTime: 2026-01-21 17:28:36
- * @FilePath: \feiye\app\(public)\login\page.tsx
- */
 
-"use client";
 
 import { Button, Form, Input, Card, Typography, message } from "antd";
 import { useRouter } from "next/navigation";

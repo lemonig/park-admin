@@ -2,8 +2,8 @@
  * @Author: Jonny
  * @Date: 2025-12-18 16:21:34
  * @LastEditors: Jonny
- * @LastEditTime: 2025-12-25 19:50:01
- * @FilePath: \park-web\app\(protected)\layout.tsx
+ * @LastEditTime: 2026-02-12 09:40:52
+ * @FilePath: \park-admin\app\(protected)\layout.tsx
  */
 "use client";
 
