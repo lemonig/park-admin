@@ -127,6 +127,16 @@ export default function ProtectedLayout({
                 transition: "all 0.3s ease",
               },
             },
+            {
+              key: "/dict",
+              icon: <UserOutlined style={{ fontSize: 16 }} />,
+              label: "字典管理",
+              style: {
+                margin: "4px 12px",
+                borderRadius: 8,
+                transition: "all 0.3s ease",
+              },
+            },
           ]}
         />
       </Sider>
