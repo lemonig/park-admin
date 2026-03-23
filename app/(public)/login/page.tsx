@@ -78,6 +78,7 @@ export default function Login() {
               onFinish={onFinish}
               autoComplete="off"
               style={styles.form}
+              initialValues={{ account: "admin", password: "park!123" }}
             >
               <Form.Item
                 label={<span style={{ fontSize: "16px", fontWeight: 500, color: "#374151" }}>用户名</span>}
