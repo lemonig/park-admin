@@ -1,4 +1,4 @@
-name: Build and Push Next.js to GHCR
+name: park_nextjs
 
 on:
   push:
