@@ -6,12 +6,12 @@ FROM node:${NODE_VERSION}-alpine AS base
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1
+RUN corepack enable
 
 # ==================== Stage 2: Dependencies ====================
 FROM base AS deps
-COPY package.json package-lock.json* ./
-# Build 阶段需要 devDependencies，不能在这里 --omit=dev
-RUN npm ci --ignore-scripts
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # ==================== Stage 3: Builder ====================
 FROM base AS builder
@@ -20,7 +20,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # 启用 standalone 输出（Next.js 官方推荐生产方式，镜像更小）
-RUN npm run build
+RUN pnpm run build
 
 # ==================== Stage 4: Production Runner ====================
 FROM base AS runner
