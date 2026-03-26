@@ -7,7 +7,7 @@
  */
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  output: 'standalone',
   images: {
     unoptimized: true, // 静态导出必须开启
   },
