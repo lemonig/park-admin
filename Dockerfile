@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 
 # ==================== Stage 1: Base & Deps ====================
-FROM node:22-alpine AS base
+ARG NODE_VERSION=24.12.0
+FROM node:${NODE_VERSION}-alpine AS base
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1
@@ -9,7 +10,8 @@ ENV NODE_ENV=production \
 # ==================== Stage 2: Dependencies ====================
 FROM base AS deps
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev --frozen-lockfile --ignore-scripts
+# Build 阶段需要 devDependencies，不能在这里 --omit=dev
+RUN npm ci --ignore-scripts
 
 # ==================== Stage 3: Builder ====================
 FROM base AS builder
