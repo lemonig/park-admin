@@ -11,7 +11,7 @@ export async function serverRequest<T>(
 ): Promise<T> {
   const { auth = true, headers, ...rest } = options;
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
 
   const res = await fetch(`${process.env.API_BASE_URL}${url}`, {
