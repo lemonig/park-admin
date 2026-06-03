@@ -7,8 +7,8 @@ on:
   workflow_dispatch:   # 手动触发测试用
 
 env:
-  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}   # 你的 Docker Hub 用户名
-  IMAGE_NAME: park-nextjs   # ← 这里改成你想要的镜像名称（推荐小写、用-连接）
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  IMAGE_NAME: park-nextjs
 
 jobs:
   build-and-push:
@@ -47,3 +47,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # 新增：注入前端后端API地址
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://36.151.148.156:3429
