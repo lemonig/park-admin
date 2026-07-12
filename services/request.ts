@@ -10,8 +10,6 @@
 'use client';
 // services/request.ts
 import axios, {
-  AxiosError,
-  AxiosInstance,
   InternalAxiosRequestConfig,
 } from 'axios';
 import { message } from 'antd';
@@ -63,26 +61,34 @@ request.interceptors.response.use(
     if (response.data.code === 0) {
       return response.data; // 直接返回 data
     }
-    message.error(response.data.msg || '操作失败');
+    if (response.data.code === 401 && typeof window !== 'undefined') {
+      message.error(response.data.message || response.data.msg || '登录过期，请重新登录');
+      localStorage.removeItem('token');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    } else {
+      message.error(response.data.message || response.data.msg || '操作失败');
+    }
     return Promise.reject(response);
   },
   (error) => {
     console.log(error)
-    if (error.response?.status == 401) {
-      message.error('登录过期，请重新登录');
-      // 只有在客户端环境中才访问 localStorage
+    if (error.response?.status === 401) {
+      message.error(error.response?.data?.message || '登录过期，请重新登录');
       if (typeof window !== 'undefined') {
-        // window.location.href = window.location.origin + "/login";
-
-        // localStorage.removeItem('token');
+        localStorage.removeItem('token');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
 
-    else if (error.response?.status == 400) {
+    else if (error.response?.status === 400) {
       message.error(error.response.message);
     }
     else {
-      message.error(error.response?.data?.msg || '网络错误');
+      message.error(error.response?.data?.message || error.response?.data?.msg || '网络错误');
     }
     return Promise.reject(error);
   },

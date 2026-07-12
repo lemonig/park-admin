@@ -5,7 +5,6 @@ import {
   Table,
   Button,
   Space,
-  Tabs,
   Modal,
   Form,
   Input,
@@ -15,7 +14,7 @@ import {
   message,
   Pagination,
 } from 'antd';
-import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { DictType, DictItem, PageVO } from '@/types/dict';
 import {
@@ -31,15 +30,13 @@ import {
   deleteItem,
 } from '@/services/dect';
 
-const { Option } = Select;
-
 const STATUS_OPTIONS = [
   { label: '启用', value: 1 },
   { label: '禁用', value: 0 },
 ];
 
 export default function DictPage() {
-  const [activeTab, setActiveTab] = useState<'type' | 'item'>('type');
+  const [view, setView] = useState<'type' | 'item'>('type');
 
   // 字典类型
   const [typeList, setTypeList] = useState<DictType[]>([]);
@@ -55,8 +52,7 @@ export default function DictPage() {
   const [itemLoading, setItemLoading] = useState(false);
   const [itemPage, setItemPage] = useState({ current: 1, pageSize: 10 });
   const [itemTotal, setItemTotal] = useState(0);
-  const [selectedTypeId, setSelectedTypeId] = useState<number | undefined>();
-  const [selectedTypeCode, setSelectedTypeCode] = useState<string | undefined>();
+  const [selectedType, setSelectedType] = useState<DictType | null>(null);
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [itemEditingId, setItemEditingId] = useState<number | null>(null);
   const [itemForm] = Form.useForm();
@@ -81,7 +77,7 @@ export default function DictPage() {
   }, [typePage.current, typePage.pageSize]);
 
   const fetchItemList = useCallback(async () => {
-    if (selectedTypeId === undefined && !selectedTypeCode) {
+    if (!selectedType?.code) {
       setItemList([]);
       setItemTotal(0);
       return;
@@ -89,43 +85,29 @@ export default function DictPage() {
     setItemLoading(true);
     try {
       const res = await getItemList({
-        typeId: selectedTypeId,
-        typeCode: selectedTypeCode,
+        typeCode: selectedType.code,
         pageNum: itemPage.current,
         pageSize: itemPage.pageSize,
       });
       const data = (res as any)?.data ?? [];
       const page = (res as any)?.page as PageVO | undefined;
       setItemList(Array.isArray(data) ? data : []);
-      setItemTotal(page?.total ?? 0);
+      setItemTotal(page?.total ?? data.length ?? 0);
     } catch {
       setItemList([]);
       setItemTotal(0);
     } finally {
       setItemLoading(false);
     }
-  }, [selectedTypeId, selectedTypeCode, itemPage.current, itemPage.pageSize]);
+  }, [selectedType?.code, itemPage.current, itemPage.pageSize]);
 
   useEffect(() => {
-    if (activeTab === 'type') fetchTypeList();
-  }, [activeTab, fetchTypeList]);
-
-  // 字典项 Tab 下“选择字典类型”下拉的选项（拉全部类型）
-  const [typeOptionsList, setTypeOptionsList] = useState<DictType[]>([]);
-  useEffect(() => {
-    if (activeTab === 'item' && typeOptionsList.length === 0) {
-      getTypeList({ pageNum: 1, pageSize: 999 })
-        .then((res: any) => {
-          const data = res?.data ?? [];
-          setTypeOptionsList(Array.isArray(data) ? data : []);
-        })
-        .catch(() => {});
-    }
-  }, [activeTab, typeOptionsList.length]);
+    if (view === 'type') fetchTypeList();
+  }, [view, fetchTypeList]);
 
   useEffect(() => {
-    if (activeTab === 'item') fetchItemList();
-  }, [activeTab, fetchItemList]);
+    if (view === 'item') fetchItemList();
+  }, [view, fetchItemList]);
 
   const openTypeAdd = () => {
     setTypeEditingId(null);
@@ -163,7 +145,6 @@ export default function DictPage() {
         message.success('新增成功');
       }
       setTypeModalOpen(false);
-      setTypeOptionsList([]);
       fetchTypeList();
     } catch (e: any) {
       if (e?.errorFields) return;
@@ -175,23 +156,34 @@ export default function DictPage() {
     try {
       await deleteType({ id });
       message.success('删除成功');
-      setTypeOptionsList([]);
       fetchTypeList();
     } catch {
       message.error('删除失败');
     }
   };
 
+  const openItems = (record: DictType) => {
+    setSelectedType(record);
+    setItemPage((page) => ({ ...page, current: 1 }));
+    setView('item');
+  };
+
+  const backToTypes = () => {
+    setView('type');
+    setSelectedType(null);
+    setItemList([]);
+    fetchTypeList();
+  };
+
   const openItemAdd = () => {
-    if (selectedTypeId === undefined && !selectedTypeCode) {
+    if (!selectedType?.code) {
       message.warning('请先选择字典类型');
       return;
     }
     setItemEditingId(null);
     itemForm.resetFields();
     itemForm.setFieldsValue({
-      typeId: selectedTypeId,
-      typeCode: selectedTypeCode,
+      typeCode: selectedType.code,
       status: 1,
       sort: 0,
     });
@@ -206,8 +198,7 @@ export default function DictPage() {
       const res = await getItemDetail({ id });
       const detail = (res as any)?.data ?? record;
       itemForm.setFieldsValue({
-        typeId: detail.typeId ?? record.typeId ?? selectedTypeId,
-        typeCode: detail.typeCode ?? record.typeCode ?? selectedTypeCode,
+        typeCode: detail.typeCode ?? record.typeCode ?? selectedType?.code,
         label: detail.label ?? record.label,
         value: detail.value ?? record.value,
         sort: detail.sort ?? record.sort ?? 0,
@@ -248,10 +239,24 @@ export default function DictPage() {
   };
 
   const typeColumns: ColumnsType<DictType> = [
-    { title: 'ID', dataIndex: 'id', width: 80 },
+    {
+      title: '序号',
+      width: 80,
+      render: (_, __, index) => (typePage.current - 1) * typePage.pageSize + index + 1,
+    },
     { title: '编码', dataIndex: 'code', width: 120 },
     { title: '名称', dataIndex: 'name', width: 140 },
     { title: '描述', dataIndex: 'description', ellipsis: true },
+    {
+      title: '子项',
+      dataIndex: 'itemCount',
+      width: 100,
+      render: (count: number | undefined, record) => (
+        <Button type="link" size="small" onClick={() => openItems(record)}>
+          {count ?? 0}
+        </Button>
+      ),
+    },
     {
       title: '状态',
       dataIndex: 'status',
@@ -292,7 +297,11 @@ export default function DictPage() {
   ];
 
   const itemColumns: ColumnsType<DictItem> = [
-    { title: 'ID', dataIndex: 'id', width: 80 },
+    {
+      title: '序号',
+      width: 80,
+      render: (_, __, index) => (itemPage.current - 1) * itemPage.pageSize + index + 1,
+    },
     { title: '标签', dataIndex: 'label', width: 140 },
     { title: '值', dataIndex: 'value', width: 120 },
     { title: '排序', dataIndex: 'sort', width: 80 },
@@ -335,115 +344,80 @@ export default function DictPage() {
     },
   ];
 
-  const typeOptions = (activeTab === 'item' ? typeOptionsList : typeList).map((t) => ({
-    label: `${t.name ?? t.code} (${t.code})`,
-    value: t.id,
-    code: t.code,
-  }));
-
   return (
     <div style={{ padding: 24 }}>
-      <h2 style={{ marginBottom: 16 }}>字典管理</h2>
+      <h2 style={{ marginBottom: 16 }}>
+        {view === 'type' ? '字典管理' : `字典项：${selectedType?.name ?? selectedType?.code ?? ''}`}
+      </h2>
 
-      <Tabs
-        activeKey={activeTab}
-        onChange={(k) => setActiveTab(k as 'type' | 'item')}
-        items={[
-          {
-            key: 'type',
-            label: '字典类型',
-            children: (
-              <>
-                <Space style={{ marginBottom: 16 }}>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={openTypeAdd}>
-                    新增类型
-                  </Button>
-                  <Button icon={<ReloadOutlined />} onClick={fetchTypeList}>
-                    刷新
-                  </Button>
-                </Space>
-                <Table<DictType>
-                  rowKey="id"
-                  columns={typeColumns}
-                  dataSource={typeList}
-                  loading={typeLoading}
-                  pagination={false}
-                  scroll={{ x: 900 }}
-                />
-                <div style={{ marginTop: 16, textAlign: 'right' }}>
-                  <Pagination
-                    current={typePage.current}
-                    pageSize={typePage.pageSize}
-                    total={typeTotal}
-                    showSizeChanger
-                    showQuickJumper
-                    showTotal={(t) => `共 ${t} 条`}
-                    onChange={(page, pageSize) =>
-                      setTypePage({ current: page, pageSize: pageSize || 10 })
-                    }
-                  />
-                </div>
-              </>
-            ),
-          },
-          {
-            key: 'item',
-            label: '字典项',
-            children: (
-              <>
-                <Space style={{ marginBottom: 16 }} wrap>
-                  <span>选择字典类型：</span>
-                  <Select
-                    placeholder="请选择字典类型"
-                    allowClear
-                    style={{ width: 220 }}
-                    value={selectedTypeId ?? undefined}
-                    onChange={(id) => {
-                      const t = typeOptions.find((o) => o.value === id);
-                      setSelectedTypeId(id ?? undefined);
-                      setSelectedTypeCode(t?.code ?? undefined);
-                      setItemPage((p) => ({ ...p, current: 1 }));
-                    }}
-                    options={typeOptions}
-                  />
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={openItemAdd}
-                    disabled={selectedTypeId === undefined && !selectedTypeCode}
-                  >
-                    新增项
-                  </Button>
-                  <Button icon={<ReloadOutlined />} onClick={fetchItemList}>
-                    刷新
-                  </Button>
-                </Space>
-                <Table<DictItem>
-                  rowKey="id"
-                  columns={itemColumns}
-                  dataSource={itemList}
-                  loading={itemLoading}
-                  pagination={false}
-                  scroll={{ x: 800 }}
-                />
-                <div style={{ marginTop: 16, textAlign: 'right' }}>
-                  <Pagination
-                    current={itemPage.current}
-                    pageSize={itemPage.pageSize}
-                    total={itemTotal}
-                    showSizeChanger
-                    showQuickJumper
-                    showTotal={(t) => `共 ${t} 条`}
-                    onChange={(page, pageSize) =>
-                      setItemPage({ current: page, pageSize: pageSize || 10 })
-                    }
-                  />
-                </div>
-              </>
-            ),
-          },
-        ]}
-      />
+      {view === 'type' ? (
+        <>
+          <Space style={{ marginBottom: 16 }}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openTypeAdd}>
+              新增类型
+            </Button>
+            <Button icon={<ReloadOutlined />} onClick={fetchTypeList}>
+              刷新
+            </Button>
+          </Space>
+          <Table<DictType>
+            rowKey="id"
+            columns={typeColumns}
+            dataSource={typeList}
+            loading={typeLoading}
+            pagination={false}
+            scroll={{ x: 1000 }}
+          />
+          <div style={{ marginTop: 16, textAlign: 'right' }}>
+            <Pagination
+              current={typePage.current}
+              pageSize={typePage.pageSize}
+              total={typeTotal}
+              showSizeChanger
+              showQuickJumper
+              showTotal={(t) => `共 ${t} 条`}
+              onChange={(page, pageSize) =>
+                setTypePage({ current: page, pageSize: pageSize || 10 })
+              }
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <Space style={{ marginBottom: 16 }} wrap>
+            <Button icon={<ArrowLeftOutlined />} onClick={backToTypes}>
+              返回字典类型
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openItemAdd}>
+              新增项
+            </Button>
+            <Button icon={<ReloadOutlined />} onClick={fetchItemList}>
+              刷新
+            </Button>
+          </Space>
+          <Table<DictItem>
+            rowKey="id"
+            columns={itemColumns}
+            dataSource={itemList}
+            loading={itemLoading}
+            pagination={false}
+            scroll={{ x: 800 }}
+          />
+          <div style={{ marginTop: 16, textAlign: 'right' }}>
+            <Pagination
+              current={itemPage.current}
+              pageSize={itemPage.pageSize}
+              total={itemTotal}
+              showSizeChanger
+              showQuickJumper
+              showTotal={(t) => `共 ${t} 条`}
+              onChange={(page, pageSize) =>
+                setItemPage({ current: page, pageSize: pageSize || 10 })
+              }
+            />
+          </div>
+        </>
+      )}
 
       {/* 字典类型 新增/编辑 弹窗 */}
       <Modal
@@ -493,9 +467,6 @@ export default function DictPage() {
         width={520}
       >
         <Form form={itemForm} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="typeId" label="字典类型" hidden>
-            <Input type="number" />
-          </Form.Item>
           <Form.Item name="typeCode" label="字典类型编码" hidden>
             <Input />
           </Form.Item>

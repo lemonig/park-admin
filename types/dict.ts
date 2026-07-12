@@ -22,6 +22,7 @@ export interface DictType {
     createTime?: Date;
     description?: string;
     id?: number;
+    itemCount?: number;
     name?: string;
     status?: number;
     updateTime?: Date;

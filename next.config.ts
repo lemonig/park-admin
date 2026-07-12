@@ -15,10 +15,10 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        // destination: 'http://localhost:3429/api/:path*',
-        destination: process.env.NEXT_PUBLIC_API_URL 
-          ? `${process.env.NEXT_PUBLIC_API_URL}/api/:path*` 
-          : 'http://36.151.148.156:3429/api/:path*',   // 本地默认后端地址
+        destination: 'http://localhost:3429/api/:path*',
+        // destination: process.env.NEXT_PUBLIC_API_URL 
+        //   ? `${process.env.NEXT_PUBLIC_API_URL}/api/:path*` 
+        //   : 'http://36.151.148.156:3429/api/:path*',   
         
         
       },

@@ -8,8 +8,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Table, Button, message, Popconfirm, Tag, Pagination, Form, Input, Select, Space } from "antd";
-import { PlusOutlined, SearchOutlined, ReloadOutlined } from "@ant-design/icons";
+import { Button, Descriptions, Form, Image, Input, message, Pagination, Popconfirm, Select, Space, Table, Tag } from "antd";
+import { ArrowLeftOutlined, PlusOutlined, SearchOutlined, ReloadOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { Market, Request } from "@/types/market";
 import type { ApiResponse } from "@/types/public";
@@ -28,6 +28,9 @@ const MarketPage: React.FC = () => {
   const [dataSource, setDataSource] = useState<Market[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
+  const [view, setView] = useState<"list" | "detail">("list");
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailRecord, setDetailRecord] = useState<Market | null>(null);
 
   // 分页参数
   const [pagination, setPagination] = useState({
@@ -82,6 +85,26 @@ const MarketPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDetailClick = async (record: Market) => {
+    if (!record.id) return;
+    setDetailLoading(true);
+    setView("detail");
+    try {
+      const res: any = await getMarketDetail(record.id);
+      setDetailRecord(res?.data || res || record);
+    } catch {
+      message.error("获取车位详情失败");
+      setDetailRecord(record);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const backToList = () => {
+    setView("list");
+    setDetailRecord(null);
   };
 
   const handleEditClick = async (record: Market) => {
@@ -152,6 +175,11 @@ const MarketPage: React.FC = () => {
       dataIndex: "parkingNo",
       key: "parkingNo",
       width: 120,
+      render: (parkingNo: string, record) => (
+        <Button type="link" size="small" onClick={() => handleDetailClick(record)}>
+          {parkingNo || "-"}
+        </Button>
+      ),
     },
     {
       title: "租售类型",
@@ -257,6 +285,114 @@ const MarketPage: React.FC = () => {
       ),
     },
   ];
+
+  const renderStatus = (status?: number) => {
+    if (status === 0) return "待审核";
+    if (status === 1) return "已通过";
+    if (status === 2) return "已拒绝";
+    return "-";
+  };
+
+  const renderType = (type?: number) => {
+    if (type === 1) return "出售";
+    if (type === 2) return "租赁";
+    return "-";
+  };
+
+  const renderDate = (date?: Date) => date ? new Date(date).toLocaleString() : "-";
+
+  if (view === "detail") {
+    return (
+      <div>
+        <Space style={{ marginBottom: 16 }}>
+          <Button icon={<ArrowLeftOutlined />} onClick={backToList}>
+            返回车位列表
+          </Button>
+          {detailRecord && (
+            <Button type="primary" onClick={() => handleEditClick(detailRecord)}>
+              编辑
+            </Button>
+          )}
+        </Space>
+        <div style={{ background: "#fff", borderRadius: 8, padding: 24, border: "1px solid #f0f0f0" }}>
+          <h2 style={{ marginTop: 0, marginBottom: 16 }}>车位详情</h2>
+          {detailLoading ? (
+            <div>加载中...</div>
+          ) : (
+            <>
+              <Descriptions bordered column={2} size="middle">
+                <Descriptions.Item label="车位号">{detailRecord?.parkingNo || "-"}</Descriptions.Item>
+                <Descriptions.Item label="租售类型">{renderType(detailRecord?.type)}</Descriptions.Item>
+                <Descriptions.Item label="价格">
+                  {detailRecord?.price != null ? `¥${Number(detailRecord.price).toFixed(2)}` : "-"}
+                </Descriptions.Item>
+                <Descriptions.Item label="联系电话">{detailRecord?.phone || "-"}</Descriptions.Item>
+                <Descriptions.Item label="城市">{detailRecord?.city || "-"}</Descriptions.Item>
+                <Descriptions.Item label="区域">{detailRecord?.area || "-"}</Descriptions.Item>
+                <Descriptions.Item label="小区">{detailRecord?.community || "-"}</Descriptions.Item>
+                <Descriptions.Item label="审核状态">{renderStatus(detailRecord?.status)}</Descriptions.Item>
+                <Descriptions.Item label="位置描述" span={2}>{detailRecord?.positionDesc || "-"}</Descriptions.Item>
+                <Descriptions.Item label="规格描述" span={2}>{detailRecord?.specs || "-"}</Descriptions.Item>
+                <Descriptions.Item label="描述" span={2}>{detailRecord?.description || "-"}</Descriptions.Item>
+                <Descriptions.Item label="创建时间">{renderDate(detailRecord?.gmtCreate)}</Descriptions.Item>
+                <Descriptions.Item label="审核时间">{renderDate(detailRecord?.auditTime)}</Descriptions.Item>
+              </Descriptions>
+              <div style={{ marginTop: 24 }}>
+                <h3 style={{ marginBottom: 12 }}>车位照片</h3>
+                {detailRecord?.images?.length ? (
+                  <Image.PreviewGroup>
+                    <Space wrap>
+                      {detailRecord.images.map((image) => (
+                        <Image
+                          key={image.id || image.url}
+                          width={160}
+                          height={120}
+                          src={image.url}
+                          alt="车位照片"
+                          style={{ objectFit: "cover", borderRadius: 8 }}
+                        />
+                      ))}
+                    </Space>
+                  </Image.PreviewGroup>
+                ) : (
+                  <div style={{ color: "#999" }}>暂无照片</div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+        {editingRecord && (
+          <MarketForm
+            title="编辑车位信息"
+            open={editModalVisible}
+            initialValues={editInitialValues || editingRecord}
+            onOpenChange={(open) => {
+              setEditModalVisible(open);
+              if (!open) {
+                setEditingRecord(null);
+                setEditInitialValues(null);
+              }
+            }}
+            onFinish={async (values) => {
+              if (!editingRecord.id) return false;
+              try {
+                await updateMarket({ ...values, id: editingRecord.id });
+                message.success("编辑成功");
+                setEditModalVisible(false);
+                setEditingRecord(null);
+                handleDetailClick(editingRecord);
+                return true;
+              } catch {
+                message.error("编辑失败");
+                return false;
+              }
+            }}
+            trigger={<></>}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>
