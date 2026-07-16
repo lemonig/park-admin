@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ArrowLeftOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
-import { Button, Descriptions, Form, Input, message, Modal, Popconfirm, Space, Table } from 'antd';
+import { Button, Descriptions, Form, Input, message, Modal, Popconfirm, Select, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { userAdd, userDelete, userDetail, userList, userResetPassword, userUpdate } from '@/services/user';
 
@@ -15,10 +15,23 @@ interface User {
   mobile?: string;
   avatar?: string;
   description?: string;
+  openid?: string;
+  unionid?: string;
+  isAdmin?: number;
+  role?: string;
+  channel?: string;
   gmtCreate?: string | Date;
   gmtModify?: string | Date;
   gmtActive?: string | Date;
 }
+
+const CHANNEL_LABEL: Record<string, string> = {
+  admin: '后台',
+  mini: '小程序',
+};
+
+const renderChannel = (channel?: string) =>
+  channel ? CHANNEL_LABEL[channel] ?? channel : '-';
 
 export default function UserPage() {
   const [view, setView] = useState<'list' | 'detail'>('list');
@@ -52,6 +65,7 @@ export default function UserPage() {
   const openAdd = () => {
     setEditingId(null);
     form.resetFields();
+    form.setFieldsValue({ isAdmin: 0, role: 'user' });
     setModalOpen(true);
   };
 
@@ -149,6 +163,37 @@ export default function UserPage() {
     { title: '门牌号', dataIndex: 'doorplate' },
     { title: '手机号', dataIndex: 'mobile' },
     {
+      title: 'openid',
+      dataIndex: 'openid',
+      width: 160,
+      ellipsis: true,
+      render: (v?: string) =>
+        v ? <Typography.Text copyable ellipsis style={{ maxWidth: 140 }}>{v}</Typography.Text> : '-',
+    },
+    {
+      title: 'unionid',
+      dataIndex: 'unionid',
+      width: 160,
+      ellipsis: true,
+      render: (v?: string) =>
+        v ? <Typography.Text copyable ellipsis style={{ maxWidth: 140 }}>{v}</Typography.Text> : '-',
+    },
+    {
+      title: '渠道',
+      dataIndex: 'channel',
+      width: 100,
+      render: renderChannel,
+    },
+    {
+      title: '角色',
+      dataIndex: 'role',
+      width: 100,
+      render: (role: string, record) => {
+        const isAdmin = record.isAdmin === 1 || role === 'admin';
+        return <Tag color={isAdmin ? 'red' : 'blue'}>{isAdmin ? '管理员' : '普通用户'}</Tag>;
+      },
+    },
+    {
       title: '创建时间',
       dataIndex: 'gmtCreate',
       render: formatDate,
@@ -197,6 +242,22 @@ export default function UserPage() {
           <Descriptions.Item label="姓名">{detailRecord?.name || '-'}</Descriptions.Item>
           <Descriptions.Item label="门牌号">{detailRecord?.doorplate || '-'}</Descriptions.Item>
           <Descriptions.Item label="手机号">{detailRecord?.mobile || '-'}</Descriptions.Item>
+          <Descriptions.Item label="角色">
+            <Tag color={detailRecord?.isAdmin === 1 ? 'red' : 'blue'}>
+              {detailRecord?.isAdmin === 1 ? '管理员' : '普通用户'}
+            </Tag>
+          </Descriptions.Item>
+          <Descriptions.Item label="渠道">{renderChannel(detailRecord?.channel)}</Descriptions.Item>
+          <Descriptions.Item label="openid" span={2}>
+            {detailRecord?.openid ? (
+              <Typography.Text copyable>{detailRecord.openid}</Typography.Text>
+            ) : '-'}
+          </Descriptions.Item>
+          <Descriptions.Item label="unionid" span={2}>
+            {detailRecord?.unionid ? (
+              <Typography.Text copyable>{detailRecord.unionid}</Typography.Text>
+            ) : '-'}
+          </Descriptions.Item>
           <Descriptions.Item label="头像">{detailRecord?.avatar || '-'}</Descriptions.Item>
           <Descriptions.Item label="创建时间">{formatDate(detailRecord?.gmtCreate)}</Descriptions.Item>
           <Descriptions.Item label="更新时间">{formatDate(detailRecord?.gmtModify)}</Descriptions.Item>
@@ -282,6 +343,35 @@ function UserModal({
         </Form.Item>
         <Form.Item name="mobile" label="手机号">
           <Input placeholder="请输入手机号" />
+        </Form.Item>
+        <Form.Item
+          name="isAdmin"
+          label="角色"
+          rules={[{ required: true, message: '请选择角色' }]}
+        >
+          <Select
+            placeholder="请选择角色"
+            options={[
+              { label: '普通用户', value: 0 },
+              { label: '管理员', value: 1 },
+            ]}
+            onChange={(value) =>
+              form.setFieldsValue({ role: value === 1 ? 'admin' : 'user' })
+            }
+          />
+        </Form.Item>
+        <Form.Item
+          name="role"
+          label="角色标识"
+          rules={[{ required: true, message: '请选择角色标识' }]}
+        >
+          <Select
+            placeholder="请选择角色标识"
+            options={[
+              { label: 'user（普通用户）', value: 'user' },
+              { label: 'admin（管理员）', value: 'admin' },
+            ]}
+          />
         </Form.Item>
         <Form.Item name="avatar" label="头像">
           <Input placeholder="请输入头像地址" />

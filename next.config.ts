@@ -12,18 +12,16 @@ const nextConfig = {
     unoptimized: true, // 静态导出必须开启
   },
   async rewrites() {
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || 'http://park-java:3429';
+
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3429/api/:path*',
-        // destination: process.env.NEXT_PUBLIC_API_URL 
-        //   ? `${process.env.NEXT_PUBLIC_API_URL}/api/:path*` 
-        //   : 'http://36.151.148.156:3429/api/:path*',   
-        
-        
+        destination: `${apiUrl}/api/:path*`,
       },
     ];
-  },
+  }
 };
 
 module.exports = nextConfig;

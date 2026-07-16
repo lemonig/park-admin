@@ -14,10 +14,18 @@ export interface UserParams {
   name?: string;
   doorplate?: string;
   account?: string;
+  openid?: string;
+  unionid?: string;
   password?: string;
+  isAdmin?: number;
+  channel?: string;
+  role?: string;
   mobile?: string;
   avatar?: string;
   description?: string;
+  gmtCreate?: string;
+  gmtModify?: string;
+  gmtActive?: string;
 }
 
 export const userList = () => {
