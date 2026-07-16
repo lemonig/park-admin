@@ -5,6 +5,7 @@ import { ArrowLeftOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/ico
 import { Button, Descriptions, Form, Input, message, Modal, Popconfirm, Select, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { userAdd, userDelete, userDetail, userList, userResetPassword, userUpdate } from '@/services/user';
+import type { UserParams } from '@/services/user';
 
 interface User {
   id?: number;
@@ -40,7 +41,7 @@ export default function UserPage() {
   const [detailRecord, setDetailRecord] = useState<User | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form] = Form.useForm<User>();
+  const [form] = Form.useForm<UserParams>();
 
   const formatDate = (date?: string | Date) => date ? new Date(date).toLocaleString() : '-';
 
@@ -313,7 +314,7 @@ function UserModal({
 }: {
   open: boolean;
   editingId: number | null;
-  form: ReturnType<typeof Form.useForm<User>>[0];
+  form: ReturnType<typeof Form.useForm<UserParams>>[0];
   onOk: () => void;
   onCancel: () => void;
 }) {
