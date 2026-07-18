@@ -13,8 +13,10 @@ export async function serverRequest<T>(
 
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
+  const apiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE || 'http://127.0.0.1:3000';
+  const requestUrl = new URL(url, apiBaseUrl).toString();
 
-  const res = await fetch(`${process.env.API_BASE_URL}${url}`, {
+  const res = await fetch(requestUrl, {
     ...rest,
     headers: {
       'Content-Type': 'application/json',
