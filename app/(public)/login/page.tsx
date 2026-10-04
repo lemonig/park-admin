@@ -9,26 +9,24 @@
 
 
 
-import { Button, Form, Input, Card, Typography, message } from "antd";
+import { Button, Form, Input, Card, message } from "antd";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { login } from "@/services/user";
 
-const { Title } = Typography;
+interface LoginResult {
+  id: number;
+  nickname?: string;
+  mobile?: string;
+  token: string;
+}
 
+// services/request.ts 的响应拦截器返回的是响应体（ApiResponse），不是 AxiosResponse
 interface LoginResponse {
   code: number;
+  success?: boolean;
   message?: string;
-  data?: {
-    token: string;
-    userInfo: {
-      id: number;
-      username: string;
-      name?: string;
-      roles?: string[];
-      // 根据实际后端返回字段补充
-    };
-  };
+  data?: LoginResult;
 }
 
 export default function Login() {
@@ -36,25 +34,28 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
 
-  const onFinish = async (values: { username: string; password: string }) => {
+  const onFinish = async (values: { account: string; password: string }) => {
     setLoading(true);
     try {
-      const { data: result } = await login(values);
-      console.log(result);
+      const res = (await login(values)) as unknown as LoginResponse;
+      const result = res?.data;
 
+      // 拦截器保证只有业务成功才走到这里，这里兜底 data 里没有 token 的异常结构
+      if (!result?.token) {
+        messageApi.error(res?.message || "登录失败，请稍后重试");
+        return;
+      }
 
       // 登录成功
       localStorage.setItem("token", result.token);
 
       messageApi.success("登录成功");
 
-
       router.push("/market");
       // 跳转到首页（根据你的路由结构修改路径）
 
     } catch (error) {
-      // 网络错误或其他异常
-      messageApi.error("网络异常，请稍后重试");
+      // 业务错误提示由 services/request.ts 响应拦截器统一弹出，这里只记录
       console.error("登录请求异常:", error);
     } finally {
       setLoading(false);
@@ -66,7 +67,7 @@ export default function Login() {
       {contextHolder}
       <div style={styles.container}>
         <div style={styles.overlay}></div>
-        <Card style={styles.card} bodyStyle={{ padding: 0 }}>
+          <Card style={styles.card} styles={{ body: { padding: 0 } }}>
           <div style={{ padding: "40px 32px" }}>
             <div style={styles.title}>
               废液管理系统
@@ -78,7 +79,7 @@ export default function Login() {
               onFinish={onFinish}
               autoComplete="off"
               style={styles.form}
-              initialValues={{ account: "admin", password: "park!123" }}
+              initialValues={{ account: "admin", password: "park123" }}
             >
               <Form.Item
                 label={<span style={{ fontSize: "16px", fontWeight: 500, color: "#374151" }}>用户名</span>}

@@ -15,6 +15,7 @@ const nextConfig = {
     const apiUrl =
       process.env.NEXT_PUBLIC_API_URL || 'http://park-java:3429';
 
+      console.log(`API URL: ${apiUrl}`);
     return [
       {
         source: '/api/:path*',
