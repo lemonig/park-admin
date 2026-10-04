@@ -50,3 +50,27 @@ jobs:
           # 新增：注入前端后端API地址
           build-args: |
             NEXT_PUBLIC_API_URL=http://36.151.148.156:3429
+
+      # 与 park-java 相同的自动部署：SSH 到服务器拉取新镜像并重建容器
+      - name: Deploy to JD Cloud
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            IMAGE=sixnut/park-nextjs
+            TAG=latest
+            # 先拉取成功才动旧容器，避免部署失败导致服务中断
+            docker pull $IMAGE:$TAG
+            # nginx 代理的是宿主机 3000 端口
+            docker rm -f park-nextjs 2>/dev/null || true
+            docker run -d \
+              --name park-nextjs \
+              --restart unless-stopped \
+              -p 3000:3000 \
+              -v /data/park/logs/nextjs:/app/logs \
+              -e NEXT_PUBLIC_API_URL=http://36.151.148.156:3429 \
+              $IMAGE:$TAG
+            docker image prune -f
