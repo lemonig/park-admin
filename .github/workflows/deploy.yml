@@ -7,8 +7,8 @@ on:
 
 env:
   REGISTRY: crpi-66pjm0oi7g763epj.cn-hangzhou.personal.cr.aliyuncs.com
-  # 与后端 park_java 命名空间同款模式：前端镜像放 park_nextjs/park-nextjs
-  IMAGE: crpi-66pjm0oi7g763epj.cn-hangzhou.personal.cr.aliyuncs.com/park_nextjs/park-nextjs
+  # 前端镜像与后端 park-java 同命名空间：park_java/park-admin-web
+  IMAGE: crpi-66pjm0oi7g763epj.cn-hangzhou.personal.cr.aliyuncs.com/park_java/park-admin-web
 
 jobs:
   build-and-push:
@@ -49,7 +49,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             set -e
-            IMAGE=crpi-66pjm0oi7g763epj.cn-hangzhou.personal.cr.aliyuncs.com/park_nextjs/park-nextjs
+            IMAGE=crpi-66pjm0oi7g763epj.cn-hangzhou.personal.cr.aliyuncs.com/park_java/park-admin-web
             TAG=latest
 
             echo "${{ secrets.ACR_PASSWORD }}" | \
