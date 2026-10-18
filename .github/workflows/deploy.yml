@@ -18,27 +18,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Login to ACR
         run: |
           echo "${{ secrets.ACR_PASSWORD }}" | \
             docker login ${{ env.REGISTRY }} \
             -u "${{ secrets.ACR_USERNAME }}" --password-stdin
 
+      # 与后端一致用原生 docker build/push：buildx 默认附加的 provenance 认证清单与阿里云个人版不兼容
       - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          # 与后端一致：sha 版本 + latest 双标签
-          tags: |
-            ${{ env.IMAGE }}:${{ github.sha }}
-            ${{ env.IMAGE }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          IMAGE=crpi-66pjm0oi7g763epj.cn-hangzhou.personal.cr.aliyuncs.com/park_java/park-admin-web
+          TAG=${{ github.sha }}
+
+          docker build -t $IMAGE:$TAG -t $IMAGE:latest .
+          docker push $IMAGE:$TAG
+          docker push $IMAGE:latest
 
       # 与 park-java 相同的自动部署：SSH 到京东云，从 ACR 拉取新镜像并重建容器
       - name: Deploy to JD Cloud
