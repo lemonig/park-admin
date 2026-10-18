@@ -8,7 +8,7 @@
 "use client";
 
 import { Layout, Menu, Avatar, Dropdown, Typography, Space } from "antd";
-import { CarOutlined, UserOutlined, LogoutOutlined, SettingOutlined, BellOutlined } from "@ant-design/icons";
+import { CarOutlined, UserOutlined, LogoutOutlined, SettingOutlined, BellOutlined, CommentOutlined } from "@ant-design/icons";
 import { usePathname, useRouter } from "next/navigation";
 import type { MenuProps } from "antd";
 
@@ -111,6 +111,16 @@ export default function ProtectedLayout({
               key: "/market",
               icon: <CarOutlined style={{ fontSize: 16 }} />,
               label: "车位管理",
+              style: {
+                margin: "4px 12px",
+                borderRadius: 8,
+                transition: "all 0.3s ease",
+              },
+            },
+            {
+              key: "/feedback",
+              icon: <CommentOutlined style={{ fontSize: 16 }} />,
+              label: "意见反馈",
               style: {
                 margin: "4px 12px",
                 borderRadius: 8,
