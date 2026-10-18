@@ -1,14 +1,14 @@
-name: park_nextjs - Build and Push to Docker Hub
+name: park_nextjs - Build and Push to ACR
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:   # 手动触发测试用
 
 env:
-  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-  IMAGE_NAME: park-nextjs
+  REGISTRY: crpi-66pjm0oi7g763epj.cn-hangzhou.personal.cr.aliyuncs.com
+  # 与后端 park_java 命名空间同款模式：前端镜像放 park_nextjs/park-nextjs
+  IMAGE: crpi-66pjm0oi7g763epj.cn-hangzhou.personal.cr.aliyuncs.com/park_nextjs/park-nextjs
 
 jobs:
   build-and-push:
@@ -21,37 +21,26 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to ACR
+        run: |
+          echo "${{ secrets.ACR_PASSWORD }}" | \
+            docker login ${{ env.REGISTRY }} \
+            -u "${{ secrets.ACR_USERNAME }}" --password-stdin
 
-      - name: Extract metadata (tags, labels)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix=sha-
-            type=ref,event=branch
-
-      - name: Build and push Docker image to Docker Hub
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          # 与后端一致：sha 版本 + latest 双标签
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # 新增：注入前端后端API地址
-          build-args: |
-            NEXT_PUBLIC_API_URL=http://36.151.148.156:3429
 
-      # 与 park-java 相同的自动部署：SSH 到服务器拉取新镜像并重建容器
+      # 与 park-java 相同的自动部署：SSH 到京东云，从 ACR 拉取新镜像并重建容器
       - name: Deploy to JD Cloud
         uses: appleboy/ssh-action@v1
         with:
@@ -60,12 +49,20 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             set -e
-            IMAGE=sixnut/park-nextjs
+            IMAGE=crpi-66pjm0oi7g763epj.cn-hangzhou.personal.cr.aliyuncs.com/park_nextjs/park-nextjs
             TAG=latest
+
+            echo "${{ secrets.ACR_PASSWORD }}" | \
+              docker login crpi-66pjm0oi7g763epj.cn-hangzhou.personal.cr.aliyuncs.com \
+              -u "${{ secrets.ACR_USERNAME }}" --password-stdin
+
             # 先拉取成功才动旧容器，避免部署失败导致服务中断
             docker pull $IMAGE:$TAG
+
             # nginx 代理的是宿主机 3000 端口
             docker rm -f park-nextjs 2>/dev/null || true
+
+            # API 地址是 Next 服务运行时 rewrites 读取的，必须在 docker run 时以环境变量注入
             docker run -d \
               --name park-nextjs \
               --restart unless-stopped \
@@ -73,4 +70,5 @@ jobs:
               -v /data/park/logs/nextjs:/app/logs \
               -e NEXT_PUBLIC_API_URL=http://36.151.148.156:3429 \
               $IMAGE:$TAG
+
             docker image prune -f
