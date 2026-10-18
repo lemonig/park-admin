@@ -8,7 +8,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Button, Descriptions, Form, Image, Input, message, Pagination, Popconfirm, Select, Space, Table, Tag } from "antd";
+import { Button, Descriptions, Form, Image, Input, message, Modal, Pagination, Popconfirm, Select, Space, Table, Tag } from "antd";
 import { ArrowLeftOutlined, PlusOutlined, SearchOutlined, ReloadOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { Market, Request } from "@/types/market";
@@ -20,6 +20,7 @@ import {
   updateMarket,
   deleteMarket,
   getMarketDetail,
+  auditMarket,
 } from "@/services/market";
 
 const { Option } = Select;
@@ -70,7 +71,7 @@ const MarketPage: React.FC = () => {
 
       const response: ApiResponse<Market[]> = await getMarketList(params);
 
-      if (response.code === 0 || response.success) {
+      if (response.code === 200) {
         setDataSource(response.data || []);
         setTotal(response.page?.total || 0);
       } else {
@@ -143,6 +144,56 @@ const MarketPage: React.FC = () => {
     searchForm.resetFields();
     setPagination(prev => ({ ...prev, current: 1 }));
     await fetchData();
+  };
+
+  // 审核通过
+  const handleAuditApprove = async (record: Market) => {
+    if (!record.id) return;
+    Modal.confirm({
+      title: "确认审核通过？",
+      content: `车位 ${record.parkingNo || "-"} 审核通过后将公开展示`,
+      okText: "通过",
+      cancelText: "取消",
+      async onOk() {
+        try {
+          await auditMarket(record.id!, { status: 1 });
+          message.success("已通过");
+          fetchData();
+        } catch {
+          message.error("操作失败");
+        }
+      },
+    });
+  };
+
+  // 审核驳回（需填写原因）
+  const handleAuditReject = (record: Market) => {
+    if (!record.id) return;
+    let remark = "";
+    Modal.confirm({
+      title: "驳回车位",
+      content: (
+        <Input.TextArea
+          rows={3}
+          placeholder="请填写驳回原因（必填）"
+          maxLength={255}
+          onChange={(e) => { remark = e.target.value; }}
+        />
+      ),
+      okText: "驳回",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk() {
+        if (!remark.trim()) {
+          message.warning("请填写驳回原因");
+          return Promise.reject();
+        }
+        return auditMarket(record.id!, { status: 2, remark: remark.trim() }).then(() => {
+          message.success("已驳回");
+          fetchData();
+        });
+      },
+    });
   };
 
   // 处理表格变化（分页、排序）
@@ -249,12 +300,40 @@ const MarketPage: React.FC = () => {
       render: (date: Date) => date ? new Date(date).toLocaleString() : "-",
     },
     {
+      title: "驳回原因",
+      dataIndex: "auditRemark",
+      key: "auditRemark",
+      width: 180,
+      ellipsis: true,
+      render: (remark?: string) => remark || "-",
+    },
+    {
       title: "操作",
       key: "action",
       width: 200,
       fixed: "right",
       render: (_, record) => (
         <Space>
+          {record.status === 0 && (
+            <>
+              <Button
+                type="link"
+                size="small"
+                style={{ color: "#52c41a" }}
+                onClick={() => handleAuditApprove(record)}
+              >
+                通过
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                danger
+                onClick={() => handleAuditReject(record)}
+              >
+                驳回
+              </Button>
+            </>
+          )}
           <Button
             type="link"
             size="small"
@@ -331,11 +410,15 @@ const MarketPage: React.FC = () => {
                 <Descriptions.Item label="区域">{detailRecord?.area || "-"}</Descriptions.Item>
                 <Descriptions.Item label="小区">{detailRecord?.community || "-"}</Descriptions.Item>
                 <Descriptions.Item label="审核状态">{renderStatus(detailRecord?.status)}</Descriptions.Item>
+                <Descriptions.Item label="靠近楼栋" span={2}>
+                  {detailRecord?.buildings ? String(detailRecord.buildings).split(",").filter(Boolean).join("、") : "-"}
+                </Descriptions.Item>
                 <Descriptions.Item label="位置描述" span={2}>{detailRecord?.positionDesc || "-"}</Descriptions.Item>
                 <Descriptions.Item label="规格描述" span={2}>{detailRecord?.specs || "-"}</Descriptions.Item>
                 <Descriptions.Item label="描述" span={2}>{detailRecord?.description || "-"}</Descriptions.Item>
                 <Descriptions.Item label="创建时间">{renderDate(detailRecord?.gmtCreate)}</Descriptions.Item>
                 <Descriptions.Item label="审核时间">{renderDate(detailRecord?.auditTime)}</Descriptions.Item>
+                <Descriptions.Item label="驳回原因" span={2}>{detailRecord?.auditRemark || "-"}</Descriptions.Item>
               </Descriptions>
               <div style={{ marginTop: 24 }}>
                 <h3 style={{ marginBottom: 12 }}>车位照片</h3>

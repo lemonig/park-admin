@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ModalForm,
   ProFormText,
@@ -14,7 +14,9 @@ import { Form, Image, message, Space, Upload } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import type { RcFile, UploadFile } from "antd/es/upload/interface";
 import type { Market, SimpleImage } from "@/types/market";
+import type { DictItem } from "@/types/dict";
 import { uploadMarketImage } from "@/services/market";
+import { getItemList } from "@/services/dect";
 
 interface MarketFormProps {
   title: string;
@@ -47,6 +49,10 @@ const toImages = (files: UploadFile[]): SimpleImage[] => {
   }, []);
 };
 
+const toBuildings = (buildings?: string): string[] => {
+  return buildings ? String(buildings).split(",").map((v) => v.trim()).filter(Boolean) : [];
+};
+
 const MarketForm: React.FC<MarketFormProps> = ({
   title,
   trigger,
@@ -57,6 +63,23 @@ const MarketForm: React.FC<MarketFormProps> = ({
 }) => {
   const [form] = Form.useForm<Market>();
   const [fileList, setFileList] = useState<UploadFile[]>(toUploadFiles(initialValues?.images));
+  const [buildingOptions, setBuildingOptions] = useState<DictItem[]>([]);
+
+  // 表单初始值：buildings 转为数组，供 Select multiple 回显
+  const formInitialValues = {
+    ...(initialValues ?? {}),
+    buildings: toBuildings(initialValues?.buildings) as unknown as string,
+  };
+
+  // 加载楼栋字典项（ld_1）
+  useEffect(() => {
+    getItemList({ typeCode: "ld_1", pageNum: 1, pageSize: 100 })
+      .then((res) => {
+        const items = res?.data;
+        setBuildingOptions(Array.isArray(items) ? items : []);
+      })
+      .catch(() => setBuildingOptions([]));
+  }, []);
 
   return (
     <ModalForm<Market>
@@ -67,13 +90,24 @@ const MarketForm: React.FC<MarketFormProps> = ({
       onOpenChange={(nextOpen) => {
         if (nextOpen) {
           setFileList(toUploadFiles(initialValues?.images));
+          form.setFieldsValue({
+            buildings: toBuildings(initialValues?.buildings) as unknown as string,
+          });
         }
         onOpenChange?.(nextOpen);
       }}
-      initialValues={initialValues}
+      initialValues={formInitialValues}
+      onInit={() => {
+        form.setFieldsValue({
+          buildings: toBuildings(initialValues?.buildings) as unknown as string,
+        });
+      }}
       onFinish={async (values) => {
+        const buildingsRaw = (values as Market & { buildings?: string | string[] }).buildings;
+        const buildings = Array.isArray(buildingsRaw) ? buildingsRaw.join(",") : (buildingsRaw ?? "");
         const success = await onFinish({
           ...(values as Market),
+          buildings,
           images: toImages(fileList),
         });
         return success;
@@ -145,6 +179,22 @@ const MarketForm: React.FC<MarketFormProps> = ({
         name="specs"
         label="规格描述"
         placeholder="如 标准车位、可停SUV、带充电桩"
+      />
+
+      {/* 靠近楼栋（多选，最多3个） */}
+      <ProFormSelect
+        name="buildings"
+        label="靠近楼栋（最多3个）"
+        mode="multiple"
+        placeholder="请选择楼栋"
+        options={buildingOptions.map((item) => ({
+          label: item.label,
+          value: item.value,
+        }))}
+        fieldProps={{
+          maxCount: 3,
+          allowClear: true,
+        }}
       />
 
       {/* 详细描述 */}

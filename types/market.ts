@@ -16,6 +16,8 @@ export interface SimpleImage {
 export interface Market {
   area?: string;
   auditTime?: Date;
+  auditRemark?: string;
+  buildings?: string;
   city?: string;
   code?: string;
   community?: string;
