@@ -4,7 +4,7 @@ Navicat Premium Data Transfer
 Source Server         : TD_lwq
 Source Server Type    : MySQL
 Source Server Version : 80041
-Source Host           : 43.136.76.214:3306
+Source Host           : (内部数据库，地址已移除)
 Source Schema         : park
 
 Target Server Type    : MySQL
