@@ -8,7 +8,7 @@
 "use client";
 
 import { Layout, Menu, Avatar, Dropdown, Typography, Space } from "antd";
-import { CarOutlined, UserOutlined, LogoutOutlined, SettingOutlined, BellOutlined, CommentOutlined } from "@ant-design/icons";
+import { CarOutlined, UserOutlined, LogoutOutlined, SettingOutlined, BellOutlined, CommentOutlined, HomeOutlined } from "@ant-design/icons";
 import { usePathname, useRouter } from "next/navigation";
 import type { MenuProps } from "antd";
 
@@ -141,6 +141,16 @@ export default function ProtectedLayout({
               key: "/dict",
               icon: <UserOutlined style={{ fontSize: 16 }} />,
               label: "字典管理",
+              style: {
+                margin: "4px 12px",
+                borderRadius: 8,
+                transition: "all 0.3s ease",
+              },
+            },
+            {
+              key: "/community",
+              icon: <HomeOutlined style={{ fontSize: 16 }} />,
+              label: "小区管理",
               style: {
                 margin: "4px 12px",
                 borderRadius: 8,
